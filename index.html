@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angelin Sharon · Embedded Systems Portfolio</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=Montserrat:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+            font-family: 'Poppins', 'Inter', 'Montserrat', sans-serif;
+        }
+
+        :root {
+            --primary: #1F3A5F;
+            --secondary: #2E4A62;
+            --accent: #C0A062;
+            --bg: #F4F6F8;
+            --text-primary: #1A1A1A;
+            --text-secondary: #555555;
+            --card-bg: rgba(255, 255, 255, 0.75);
+            --shadow: 0 8px 20px rgba(0, 20, 30, 0.06);
+            --border-subtle: rgba(31, 58, 95, 0.1);
+            --chat-user: #e1e9f2;
+            --chat-bot: var(--card-bg);
+        }
+
+        body.dark-mode {
+            --primary: #2e4a6b;
+            --secondary: #1f3a5f;
+            --accent: #b38f5a;
+            --bg: #12171f;
+            --text-primary: #eaeef2;
+            --text-secondary: #b0b8c5;
+            --card-bg: rgba(25, 35, 50, 0.8);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            --border-subtle: rgba(192, 160, 98, 0.25);
+            --chat-user: #2a3a4f;
+            --chat-bot: #1e2a38;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ===== BACKGROUND ANIMATION (circuit lines) ===== */
+        .circuit-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            opacity: 0.3;
+            pointer-events: none;
+            background: 
+                radial-gradient(circle at 20% 30%, var(--accent) 0.5px, transparent 0.5px),
+                radial-gradient(circle at 80% 70%, var(--accent) 0.8px, transparent 0.8px),
+                linear-gradient(45deg, transparent 65%, var(--primary) 66%, transparent 70%),
+                linear-gradient(135deg, transparent 70%, var(--secondary) 71%, transparent 75%);
+            background-size: 40px 40px, 60px 60px, 120% 120%, 120% 120%;
+            animation: flowWires 16s linear infinite alternate;
+        }
+
+        @keyframes flowWires {
+            0% { background-position: 0 0, 0 0, -10% -10%, 110% 110%; }
+            100% { background-position: 20px 20px, -15px -15px, 5% 5%, 95% 95%; }
+        }
+
+        .circuit-bg::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at 30% 40%, var(--accent) 1px, transparent 1px),
+                              radial-gradient(circle at 70% 20%, var(--accent) 1px, transparent 1px);
+            background-size: 80px 80px;
+            opacity: 0.2;
+            animation: pulseDots 8s ease-in-out infinite;
+        }
+
+        @keyframes pulseDots {
+            0% { opacity: 0.1; } 50% { opacity: 0.3; } 100% { opacity: 0.1; }
+        }
+
+        /* ===== LOADING BOOT ANIMATION ===== */
+        #boot-loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s, visibility 0.5s;
+            color: var(--primary);
+            backdrop-filter: blur(2px);
+        }
+        .boot-content {
+            text-align: center;
+        }
+        .chip-icon {
+            font-size: 4rem;
+            color: var(--accent);
+            animation: blinkChip 1s step-start infinite;
+        }
+        .boot-text {
+            font-family: 'Montserrat', monospace;
+            letter-spacing: 3px;
+            font-weight: 300;
+            margin-top: 1rem;
+        }
+        .boot-progress {
+            width: 160px;
+            height: 4px;
+            background: var(--border-subtle);
+            margin: 1.5rem auto 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .boot-progress::after {
+            content: '';
+            display: block;
+            width: 40%;
+            height: 100%;
+            background: var(--accent);
+            animation: bootMove 1.2s ease-in-out infinite;
+        }
+        @keyframes bootMove {
+            0% { transform: translateX(-100%); } 100% { transform: translateX(300%); }
+        }
+        @keyframes blinkChip {
+            0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+        }
+
+        /* ===== layout & navbar ===== */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(244, 246, 248, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background 0.3s;
+        }
+        body.dark-mode .navbar {
+            background: rgba(18, 23, 31, 0.8);
+        }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            position: relative;
+            padding: 0.3rem 0;
+        }
+        .nav-links a.active {
+            color: var(--accent);
+        }
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent);
+            animation: slideActive 0.2s;
+        }
+        @keyframes slideActive { from { width: 0; } to { width: 100%; } }
+
+        .dark-toggle {
+            background: transparent;
+            border: 1.5px solid var(--accent);
+            color: var(--accent);
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .dark-toggle:hover {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 5rem 0;
+            border-bottom: 1px dashed var(--border-subtle);
+        }
+
+        h1, h2, h3 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        h2 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+        h2::after {
+            content: '';
+            width: 70px;
+            height: 4px;
+            background: var(--accent);
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            border-radius: 4px;
+        }
+
+        /* hero */
+        .hero {
+            min-height: 85vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .hero-content {
+            max-width: 700px;
+            animation: fadeUp 1s ease forwards;
+        }
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .hero-name {
+            font-size: 3.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+        .typed-container {
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin: 1rem 0 1.5rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        #typed-text {
+            color: var(--accent);
+            font-weight: 600;
+            border-right: 3px solid var(--accent);
+            padding-right: 6px;
+            animation: blinkCursor 1s step-end infinite;
+        }
+        @keyframes blinkCursor { from, to { border-color: transparent; } 50% { border-color: var(--accent); } }
+
+        .hero-sub {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        .cta-group {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.8rem 2rem;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .btn-primary:hover {
+            background: var(--secondary);
+            border-color: var(--secondary);
+            transform: scale(1.02);
+            box-shadow: var(--shadow);
+        }
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* about - professional */
+        .about-text {
+            font-size: 1.2rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(4px);
+            padding: 2rem;
+            border-radius: 28px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+        }
+
+        /* ===== TECHNICAL SKILLS (cards, no percentages) ===== */
+        .skills-wrapper {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
+        }
+        .skill-category h3 {
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            font-size: 1.6rem;
+        }
+        .skill-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .skill-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(4px);
+            padding: 1.2rem 1.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-subtle);
+            transition: 0.2s;
+            box-shadow: var(--shadow);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .skill-card i {
+            color: var(--accent);
+            font-size: 1.4rem;
+            width: 2rem;
+        }
+        .skill-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 28px -8px rgba(31,58,95,0.2);
+            border-left: 4px solid var(--accent);
+        }
+
+        /* soft skills grid (icon + label) - now separate section */
+        .soft-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            text-align: center;
+        }
+        .soft-item {
+            background: var(--card-bg);
+            backdrop-filter: blur(2px);
+            padding: 1.8rem 1rem;
+            border-radius: 32px;
+            border: 1px solid var(--border-subtle);
+            transition: 0.2s;
+            font-weight: 500;
+        }
+        .soft-item i {
+            font-size: 2.4rem;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+        }
+        .soft-item:hover {
+            transform: scale(1.03) translateY(-6px);
+            box-shadow: var(--shadow);
+        }
+
+        /* PROFESSIONAL PROJECT SECTION (enhanced) */
+        .project-showcase {
+            display: flex;
+            flex-wrap: wrap;
+            background: var(--card-bg);
+            backdrop-filter: blur(6px);
+            border-radius: 40px;
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+        .project-showcase:hover {
+            box-shadow: 0 25px 40px -14px rgba(0,0,0,0.2);
+        }
+        .project-info {
+            flex: 1 1 300px;
+            padding: 2.5rem;
+        }
+        .project-title {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+        }
+        .project-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.8rem;
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+        .project-tech {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin: 1.5rem 0 1rem;
+        }
+        .tech-tag {
+            background: var(--primary);
+            color: white;
+            padding: 0.3rem 1.2rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+            font-weight: 500;
+        }
+        .project-mock {
+            flex: 1 1 300px;
+            background: radial-gradient(circle at 30% 40%, var(--secondary) 0%, transparent 60%),
+                        repeating-linear-gradient(45deg, var(--border-subtle) 0px, var(--border-subtle) 2px, transparent 2px, transparent 12px);
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .device-mockup {
+            width: 220px;
+            height: 220px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            border: 3px solid var(--accent);
+            animation: morphShape 8s ease-in-out infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            color: var(--accent);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 30px rgba(192,160,98,0.2);
+            padding: 1rem;
+            text-align: center;
+        }
+        .device-mockup small {
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            margin-top: 0.3rem;
+            opacity: 0.8;
+        }
+        @keyframes morphShape {
+            0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+        }
+
+        /* contact card */
+        .contact-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(6px);
+            border-radius: 40px;
+            padding: 2.5rem;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow);
+            transition: 0.2s;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .contact-details a {
+            display: inline-block;
+            color: var(--text-primary);
+            text-decoration: none;
+            margin: 0.5rem 1.5rem 0.5rem 0;
+            font-size: 1.2rem;
+        }
+        .contact-details i {
+            color: var(--accent);
+            width: 2rem;
+        }
+        .contact-card:hover {
+            transform: translateY(-6px);
+        }
+
+        .footer {
+            padding: 2rem 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* responsive */
+        @media (max-width: 700px) {
+            .navbar { flex-direction: column; gap: 0.8rem; }
+            .hero-name { font-size: 2.8rem; }
+            .soft-grid { grid-template-columns: repeat(2,1fr); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.7s ease;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== CHATBOT WIDGET ===== */
+        .chatbot-icon {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 65px;
+            height: 65px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 200;
+            transition: 0.2s;
+            border: 2px solid var(--accent);
+        }
+        .chatbot-icon:hover {
+            transform: scale(1.1) rotate(5deg);
+            background: var(--secondary);
+        }
+
+        .chat-panel {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 340px;
+            max-width: calc(100vw - 60px);
+            background: var(--card-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -8px rgba(0,0,0,0.4);
+            z-index: 199;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            transition: 0.25s ease;
+            transform-origin: bottom right;
+        }
+        .chat-panel.open {
+            display: flex;
+            animation: chatPop 0.2s ease;
+        }
+        @keyframes chatPop {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .chat-header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header i {
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        .chat-header i:hover { opacity: 1; }
+
+        .chat-messages {
+            padding: 1.2rem;
+            min-height: 250px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .msg {
+            padding: 0.7rem 1rem;
+            border-radius: 20px;
+            max-width: 85%;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        .msg.bot {
+            background: var(--chat-bot);
+            border: 1px solid var(--border-subtle);
+            align-self: flex-start;
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+        .msg.user {
+            background: var(--chat-user);
+            align-self: flex-end;
+            color: var(--text-primary);
+            border-bottom-right-radius: 4px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .chat-input-area {
+            display: flex;
+            border-top: 1px solid var(--border-subtle);
+            padding: 0.8rem;
+            gap: 8px;
+            background: var(--card-bg);
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border: none;
+            border-radius: 30px;
+            background: var(--bg);
+            color: var(--text-primary);
+            outline: 1px solid var(--border-subtle);
+        }
+        .chat-input-area button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-input-area button:hover {
+            background: var(--accent);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- boot loader animation -->
+    <div id="boot-loader">
+        <div class="boot-content">
+            <div class="chip-icon"><i class="fas fa-microchip"></i></div>
+            <div class="boot-text">BOOT SEQUENCE</div>
+            <div class="boot-progress"></div>
+        </div>
+    </div>
+
+    <!-- background -->
+    <div class="circuit-bg"></div>
+
+    <!-- navbar -->
+    <nav class="navbar">
+        <div class="logo" style="font-weight: 600; color: var(--primary);">ANGELIN SHARON</div>
+        <div class="nav-links">
+            <a href="#hero" class="active">Home</a>
+            <a href="#about">About</a>
+            <a href="#technical-skills">Tech Skills</a>
+            <a href="#soft-skills">Soft Skills</a>
+            <a href="#project">Project</a>
+            <a href="#contact">Contact</a>
+        </div>
+        <button class="dark-toggle" id="darkToggle">🌙 Dark</button>
+    </nav>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section id="hero" class="hero">
+            <div class="hero-content">
+                <div class="hero-name">Angelin Sharon</div>
+                <div class="typed-container">
+                    <span>></span> <span id="typed-text"></span>
+                </div>
+                <div class="hero-sub">Third-year Electronics and Communication Engineering (ECE) Student</div>
+                <div class="cta-group">
+                    <a href="#project" class="btn btn-primary">View Projects</a>
+                    <a href="#contact" class="btn btn-outline">Contact Me</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Me - professional version -->
+        <section id="about" class="reveal">
+            <h2>About Me</h2>
+            <div class="about-text">
+                I am a third-year Electronics and Communication Engineering student with a passion for embedded systems and smart devices. I enjoy designing and programming microcontrollers to bring innovative solutions to real-world challenges. My current focus is on creating systems that integrate sensors, microcontrollers, and IoT platforms.
+            </div>
+        </section>
+
+        <!-- TECHNICAL SKILLS (separated, no percentages) -->
+        <section id="technical-skills" class="reveal">
+            <h2>Technical Skills</h2>
+            <div class="skills-wrapper">
+                <!-- Core Knowledge -->
+                <div class="skill-category">
+                    <h3><i class="fas fa-microchip" style="margin-right: 10px;"></i> Core Knowledge</h3>
+                    <div class="skill-items">
+                        <div class="skill-card"><i class="fas fa-bolt"></i> Electronics Fundamentals</div>
+                        <div class="skill-card"><i class="fas fa-calculator"></i> Digital Electronics</div>
+                        <div class="skill-card"><i class="fas fa-microchip"></i> Microprocessors and Microcontrollers</div>
+                        <div class="skill-card"><i class="fas fa-robot"></i> Embedded Systems</div>
+                    </div>
+                </div>
+                <!-- Programming & Platforms -->
+                <div class="skill-category">
+                    <h3><i class="fas fa-code" style="margin-right: 10px;"></i> Programming & Platforms</h3>
+                    <div class="skill-items">
+                        <div class="skill-card"><i class="fas fa-c"></i> C Programming</div>
+                        <div class="skill-card"><i class="fas fa-microchip"></i> Arduino</div>
+                        <div class="skill-card"><i class="fas fa-wifi"></i> ESP32</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SOFT SKILLS (separate section) -->
+        <section id="soft-skills" class="reveal">
+            <h2>Soft Skills</h2>
+            <div class="soft-grid">
+                <div class="soft-item"><i class="fas fa-comments"></i> Communication</div>
+                <div class="soft-item"><i class="fas fa-users"></i> Teamwork</div>
+                <div class="soft-item"><i class="fas fa-sync-alt"></i> Adaptability</div>
+                <div class="soft-item"><i class="fas fa-graduation-cap"></i> Self-learning</div>
+            </div>
+        </section>
+
+        <!-- Current Project - professional & nicely styled -->
+        <section id="project" class="reveal">
+            <h2>Current Project</h2>
+            <div class="project-showcase">
+                <div class="project-info">
+                    <h3 class="project-title">Smart Accident Detection & Alert System</h3>
+                    <p class="project-description">
+                        The Smart Accident Detection System is an embedded solution developed to detect vehicular collisions in real time using ESP32 and MPU6050 sensors. It continuously monitors acceleration and motion patterns to identify sudden impacts. Upon detection, the system retrieves GPS location data. The location is then transmitted to enable faster emergency response and improved road safety.
+                    </p>
+                    <div class="project-tech">
+                        <span class="tech-tag">ESP32</span>
+                        <span class="tech-tag">MPU6050</span>
+                        <span class="tech-tag">GPS (NEO-6M)</span>
+                        <span class="tech-tag">IoT</span>
+                    </div>
+                </div>
+                <div class="project-mock">
+                    <div class="device-mockup">
+                        <i class="fas fa-car-crash"></i>
+                        <small>collision detection</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact -->
+        <section id="contact" class="reveal">
+            <h2>Contact</h2>
+            <div class="contact-card">
+                <div class="contact-details">
+                    <a href="mailto:angelinsharon38@gmail.com"><i class="fas fa-envelope"></i> angelinsharon38@gmail.com</a>
+                    <a href="#"><i class="fab fa-linkedin"></i> linkedin.com/in/angelin-sharon-876440338</a>
+                </div>
+                <div style="color: var(--accent);"><i class="fas fa-id-card fa-2x"></i></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        © 2025 Angelin Sharon – Embedded Systems Portfolio. All rights reserved.
+        <span style="display: block; margin-top: 0.5rem;">⚡ designed with hardware precision</span>
+    </footer>
+
+    <!-- CHATBOT ICON + PANEL (message sending) -->
+    <div class="chatbot-icon" id="chatIcon">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <span><i class="fas fa-robot" style="margin-right: 8px;"></i> Hardware Assistant</span>
+            <i class="fas fa-times" id="closeChat"></i>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="msg bot">Hello! I'm your embedded assistant. Ask me about Angelin's skills, projects, or contact.</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Write a message..." autocomplete="off">
+            <button id="sendMsg"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        (function() {
+            // boot loader hide after page load
+            window.addEventListener('load', function() {
+                setTimeout(() => {
+                    document.getElementById('boot-loader').style.opacity = '0';
+                    document.getElementById('boot-loader').style.visibility = 'hidden';
+                }, 1000);
+            });
+
+            // typed effect
+            const typedEl = document.getElementById('typed-text');
+            const words = ['Aspiring Embedded Systems Engineer', 'Hardware Developer', 'ECE Student'];
+            let i = 0, j = 0, isDeleting = false;
+            function typeEffect() {
+                const current = words[i % words.length];
+                if (!isDeleting && j <= current.length) {
+                    typedEl.textContent = current.slice(0, j++);
+                    if (j === current.length + 1) { isDeleting = true; setTimeout(typeEffect, 2000); return; }
+                } else if (isDeleting && j >= 0) {
+                    typedEl.textContent = current.slice(0, j--);
+                    if (j === -1) { isDeleting = false; i++; j = 0; }
+                }
+                setTimeout(typeEffect, isDeleting ? 70 : 120);
+            }
+            typeEffect();
+
+            // dark mode toggle
+            const toggle = document.getElementById('darkToggle');
+            toggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light' : '🌙 Dark';
+            });
+
+            // scroll reveal + active nav
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-links a');
+
+            function scrollEffects() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 150;
+                    const sectionBottom = sectionTop + section.offsetHeight;
+                    if (window.scrollY >= sectionTop && window.scrollY < sectionBottom) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) link.classList.add('active');
+                });
+
+                document.querySelectorAll('.reveal').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight - 60) el.classList.add('active');
+                });
+            }
+
+            window.addEventListener('scroll', scrollEffects);
+            window.addEventListener('load', scrollEffects);
+
+            // smooth scroll on nav click
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) target.scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            // ---------- CHATBOT LOGIC ----------
+            const chatIcon = document.getElementById('chatIcon');
+            const chatPanel = document.getElementById('chatPanel');
+            const closeChat = document.getElementById('closeChat');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatInput = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendMsg');
+
+            // open panel
+            chatIcon.addEventListener('click', () => {
+                chatPanel.classList.toggle('open');
+            });
+
+            // close panel
+            closeChat.addEventListener('click', () => {
+                chatPanel.classList.remove('open');
+            });
+
+            // send message function
+            function addUserMessage(text) {
+                if (!text.trim()) return;
+                // user message
+                const userDiv = document.createElement('div');
+                userDiv.classList.add('msg', 'user');
+                userDiv.textContent = text;
+                chatMessages.appendChild(userDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                chatInput.value = '';
+
+                // simulate bot reply after short delay (contextual)
+                setTimeout(() => {
+                    const botDiv = document.createElement('div');
+                    botDiv.classList.add('msg', 'bot');
+                    let reply = "Thanks for your message. I'm a simple demo bot — Angelin will get back to you soon!";
+                    // rudimentary keyword detection for demo
+                    const lower = text.toLowerCase();
+                    if (lower.includes('skill') || lower.includes('tech')) reply = "Angelin's core skills: C, Arduino, ESP32, embedded systems, digital electronics.";
+                    else if (lower.includes('project') || lower.includes('accident')) reply = "Current project: Smart Accident Detection using ESP32 & MPU6050 with GPS.";
+                    else if (lower.includes('contact') || lower.includes('email')) reply = "You can reach Angelin at angelinsharon38@gmail.com or via LinkedIn.";
+                    else if (lower.includes('hello') || lower.includes('hi')) reply = "Hello! Ask me about her technical skills or project.";
+                    botDiv.textContent = reply;
+                    chatMessages.appendChild(botDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 500);
+            }
+
+            sendBtn.addEventListener('click', () => {
+                addUserMessage(chatInput.value);
+            });
+
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addUserMessage(chatInput.value);
+                }
+            });
+
+            // optional: click outside to close (simple version)
+            document.addEventListener('click', (e) => {
+                if (!chatPanel.contains(e.target) && !chatIcon.contains(e.target) && chatPanel.classList.contains('open')) {
+                    chatPanel.classList.remove('open');
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>
